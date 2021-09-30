@@ -5,6 +5,9 @@ import (
 	"reflect"
 	"strconv"
 	"unsafe"
+	"log"
+	//"bytes"
+	//"strings"
 )
 
 type (
@@ -181,6 +184,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 	var nbytesread int
 
 	c, e := readByte(reader)
+	log.Printf("调式 c ------ %+v, err ------- %+v", c, e)
 	if e != nil {
 		return reflect.Value{}, 0, e
 	}
@@ -188,6 +192,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 	if c < FIXMAP || c >= NEGFIXNUM {
 		retval = reflect.ValueOf(int8(c))
 	} else if c >= FIXMAP && c <= FIXMAPMAX {
+		log.Printf("---------------- debug 4 ---------------")
 		if reflected {
 			retval, n, e = unpackMapReflected(reader, lownibble(c))
 		} else {
@@ -199,6 +204,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		}
 		nbytesread += n
 	} else if c >= FIXARRAY && c <= FIXARRAYMAX {
+		log.Printf("---------------- debug 3 ---------------")
 		if reflected {
 			retval, n, e = unpackArrayReflected(reader, lownibble(c))
 		} else {
@@ -210,6 +216,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		}
 		nbytesread += n
 	} else if c >= FIXRAW && c <= FIXRAWMAX {
+		log.Printf("---------------- debug 2 ---------------")
 		data := make([]byte, lowfive(c))
 		n, e := reader.Read(data)
 		nbytesread += n
@@ -218,6 +225,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		}
 		retval = reflect.ValueOf(data)
 	} else {
+		log.Printf("---------------- debug 1 ---------------")
 		switch c {
 		case NIL:
 			retval = reflect.ValueOf(nil)
@@ -382,8 +390,67 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 				return reflect.Value{}, nbytesread, e
 			}
 		default:
-			panic("unsupported code: " + strconv.Itoa(int(c)))
+			//panic("unsupported code: " + strconv.Itoa(int(c)))
+			
+			log.Println("unsupported code: " + strconv.Itoa(int(c)))
+			log.Printf("---------------- debug 99 ---------------")
+			//readerLen, err := reader.Read()
+			//log.Printf("reader --------------- %+v", readerLen)
+			//buf := new(bytes.Buffer)
+			//buf.ReadFrom(reader)			// todo: this will block the reader
+			//dataLen := buf.Len()
+			//log.Printf("buf --------------- %+v", buf)
+			
+			//buf := &bytes.Buffer{}
+			//nRead, err := io.Copy(buf, reader)
+			//log.Println("nRead ------------", nRead)
+			//if err != nil {
+			//	log.Println(err)
+			//}
+		
+			// todo: 这种方式是先设置大小， 再去读取
+			dataLen := 1024
+			log.Printf("dataLen ------------ %+v", dataLen)
+			data := make([]byte, dataLen) 
+			n, e := reader.Read(data)
+			log.Println("e -------------- ", e)
+			nbytesread += n
+			if e != nil {
+				return reflect.Value{}, nbytesread, e
+			}
+			//dataFixBlank := bytes.Trim(data[1:], " ")
+			log.Println("data len --------------", len(data))
+			//dataFixBlank := strings.TrimRight(string(data[1:]), " ")
+			dataFixBlank := data[1:]
+			log.Println("dataFixBlank --------------", dataFixBlank[200])
+			log.Println("dataFixBlank len --------------", len(dataFixBlank))
+			for i, j := range dataFixBlank {
+				log.Printf("dataFixBlank item ----------- %+v, %+v, %+v\n", i, reflect.TypeOf(i), j)
+			}
+			cutIdx := 0
+			for i, v := range dataFixBlank {
+				if v == 0 {
+					cutIdx = i
+					break
+				}
+			}
+			log.Println("cutIdx -----------", cutIdx)
+			dataFix := dataFixBlank[:cutIdx]
+
+			//retval = reflect.ValueOf(data)
+			//retval = reflect.ValueOf(dataFixBlank)
+			retval = reflect.ValueOf(dataFix)
+
+			// -------------------------
+			//var buf = make([]byte, 1024)
+			//nRead, e := io.ReadFull(reader, buf)
+			//log.Println("e -------------- ", e)
+			//if nRead > 0 && nRead <= 1023 {
+			//	data := (buf[:nRead])
+			//	retval = reflect.ValueOf(data)
+			//}
 		}
+		
 	}
 	return retval, nbytesread, nil
 }
