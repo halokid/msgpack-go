@@ -3,9 +3,7 @@ package msgpack
 import (
 	"io"
 	"reflect"
-	"strconv"
 	"unsafe"
-	"log"
 	//"bytes"
 	//"strings"
 )
@@ -184,7 +182,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 	var nbytesread int
 
 	c, e := readByte(reader)
-	log.Printf("调式 c ------ %+v, err ------- %+v", c, e)
+	//log.Printf("debug c ------ %+v, err ------- %+v", c, e)
 	if e != nil {
 		return reflect.Value{}, 0, e
 	}
@@ -192,7 +190,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 	if c < FIXMAP || c >= NEGFIXNUM {
 		retval = reflect.ValueOf(int8(c))
 	} else if c >= FIXMAP && c <= FIXMAPMAX {
-		log.Printf("---------------- debug 4 ---------------")
+		//log.Printf("---------------- debug 4 ---------------")
 		if reflected {
 			retval, n, e = unpackMapReflected(reader, lownibble(c))
 		} else {
@@ -204,7 +202,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		}
 		nbytesread += n
 	} else if c >= FIXARRAY && c <= FIXARRAYMAX {
-		log.Printf("---------------- debug 3 ---------------")
+		//log.Printf("---------------- debug 3 ---------------")
 		if reflected {
 			retval, n, e = unpackArrayReflected(reader, lownibble(c))
 		} else {
@@ -216,7 +214,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		}
 		nbytesread += n
 	} else if c >= FIXRAW && c <= FIXRAWMAX {
-		log.Printf("---------------- debug 2 ---------------")
+		//log.Printf("---------------- debug 2 ---------------")
 		data := make([]byte, lowfive(c))
 		n, e := reader.Read(data)
 		nbytesread += n
@@ -225,7 +223,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		}
 		retval = reflect.ValueOf(data)
 	} else {
-		log.Printf("---------------- debug 1 ---------------")
+		//log.Printf("---------------- debug 1 ---------------")
 		switch c {
 		case NIL:
 			retval = reflect.ValueOf(nil)
@@ -392,8 +390,8 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		default:
 			//panic("unsupported code: " + strconv.Itoa(int(c)))
 			
-			log.Println("unsupported code: " + strconv.Itoa(int(c)))
-			log.Printf("---------------- debug 99 ---------------")
+			//log.Println("unsupported code: " + strconv.Itoa(int(c)))
+			//log.Printf("---------------- debug 99 ---------------")
 			//readerLen, err := reader.Read()
 			//log.Printf("reader --------------- %+v", readerLen)
 			//buf := new(bytes.Buffer)
@@ -408,25 +406,25 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 			//	log.Println(err)
 			//}
 		
-			// todo: 这种方式是先设置大小， 再去读取
-			dataLen := 1024
-			log.Printf("dataLen ------------ %+v", dataLen)
+			// todo: 匹配一些解码不了，但是又可以读取的请况, 这种方式是先设置大小，最大设置为2M, 再去读取
+			dataLen := 1024 * 1024 * 2
+			//log.Printf("dataLen ------------ %+v", dataLen)
 			data := make([]byte, dataLen) 
 			n, e := reader.Read(data)
-			log.Println("e -------------- ", e)
+			//log.Println("e -------------- ", e)
 			nbytesread += n
 			if e != nil {
 				return reflect.Value{}, nbytesread, e
 			}
 			//dataFixBlank := bytes.Trim(data[1:], " ")
-			log.Println("data len --------------", len(data))
+			//log.Println("data len --------------", len(data))
 			//dataFixBlank := strings.TrimRight(string(data[1:]), " ")
-			dataFixBlank := data[1:]
-			log.Println("dataFixBlank --------------", dataFixBlank[200])
-			log.Println("dataFixBlank len --------------", len(dataFixBlank))
-			for i, j := range dataFixBlank {
-				log.Printf("dataFixBlank item ----------- %+v, %+v, %+v\n", i, reflect.TypeOf(i), j)
-			}
+			dataFixBlank := data[1:]		// todo: 这种请况前面会多一个符号，要去掉这个符号
+			//log.Println("dataFixBlank --------------", dataFixBlank[200])
+			//log.Println("dataFixBlank len --------------", len(dataFixBlank))
+			//for i, j := range dataFixBlank {
+				//log.Printf("dataFixBlank item ----------- %+v, %+v, %+v\n", i, reflect.TypeOf(i), j)
+			//}
 			cutIdx := 0
 			for i, v := range dataFixBlank {
 				if v == 0 {
@@ -434,7 +432,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 					break
 				}
 			}
-			log.Println("cutIdx -----------", cutIdx)
+			//log.Println("cutIdx -----------", cutIdx)
 			dataFix := dataFixBlank[:cutIdx]
 
 			//retval = reflect.ValueOf(data)
