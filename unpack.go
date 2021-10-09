@@ -6,6 +6,7 @@ import (
 	"unsafe"
 	//"bytes"
 	//"strings"
+	"log"
 )
 
 type (
