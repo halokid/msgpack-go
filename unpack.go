@@ -409,6 +409,7 @@ func unpack(reader io.Reader, reflected bool) (v reflect.Value, n int, err error
 		
 			// todo: 匹配一些解码不了，但是又可以读取的请况, 这种方式是先设置大小，最大设置为2M, 再去读取
 			log.Println("---匹配到一些msgpack解码不了，但是又可以正确读取的情况, dataLen设置为2M---")
+			log.Println("---现在网关GW有一些接口数据比较大，接口返回乱码的问题会不会是因为这里？但是乱码时却没有跑这段逻辑---")
 			dataLen := 1024 * 1024 * 2
 			//log.Printf("dataLen ------------ %+v", dataLen)
 			data := make([]byte, dataLen) 
